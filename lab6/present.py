@@ -9,12 +9,13 @@ FULLROUND = 31
 # S-Box Layer
 sbox = [0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD,
         0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2]
-
+sbox_inverse = [sbox.index(x) for x in range(16)]
 # PLayer
 pmt = [0, 16, 32, 48, 1, 17, 33, 49, 2, 18, 34, 50, 3, 19, 35, 51,
        4, 20, 36, 52, 5, 21, 37, 53, 6, 22, 38, 54, 7, 23, 39, 55,
        8, 24, 40, 56, 9, 25, 41, 57, 10, 26, 42, 58, 11, 27, 43, 59,
        12, 28, 44, 60, 13, 29, 45, 61, 14, 30, 46, 62, 15, 31, 47, 63]
+pmt_inverse = [pmt.index(x) for x in range(64)]
 
 # Rotate left: 0b1001 --> 0b0011
 
@@ -32,26 +33,62 @@ def ror(val, r_bits, max_bits): return \
 
 
 def genRoundKeys(key):
-    pass
+    roundkeys = []
+    roundkeys.append(FULLROUND + 1)
+    for i in range(1,FULLROUND+2): # (K1 ... K32)
+            roundkeys.append(key >>16)
+            #1. Shift
+            #rawKey[19:len(rawKey)]+rawKey[0:19]
+            key = ((key & (2**19-1)) << 61) + (key >> 19)
+            #2. SBox
+            #rawKey[76:80] = S(rawKey[76:80])
+            key = (sbox[key >> 76] << 76)+(key & (2**76-1))
+            #3. Salt
+            #rawKey[15:20] ^ i
+            key ^= i << 15
+    return roundkeys
 
 
 def addRoundKey(state, Ki):
-    pass
+    return state ^ Ki
 
 
 def sBoxLayer(state):
-    pass
+    output = 0
+    for i in range(16):
+        output += sbox[( state >> (i*4)) & 0xF] << (i*4)
+    return output
 
+def sBoxLayer_inverse(state):
+    output = 0
+    for i in range(16):
+        output += sbox_inverse[( state >> (i*4)) & 0xF] << (i*4)
+    return output
 
 def pLayer(state):
-    pass
+    output = 0
+    for i in range(64):
+        output += ((state >> i) & 0x01) << pmt[i]
+    return output
+
+def pLayer_inverse(state):
+    output = 0
+    for i in range(64):
+        output += ((state >> i) & 0x01) << pmt_inverse[i]
+    return output
 
 
 def present_round(state, roundKey):
-    return state
+    state = addRoundKey(state, roundKey)
+    state = sBoxLayer(state)
+    state = pLayer(state)
+    return state    
 
 
 def present_inv_round(state, roundKey):
+    state = pLayer_inverse(state)
+    state = sBoxLayer_inverse(state)
+    state = addRoundKey(state, roundKey)
     return state
 
 
@@ -76,7 +113,9 @@ if __name__ == "__main__":
     # Testvector for key schedule
     key1 = 0x00000000000000000000
     keys = genRoundKeys(key1)
+
     keysTest = {0: 32, 1: 0, 2: 13835058055282163712, 3: 5764633911313301505, 4: 6917540022807691265, 5: 12682149744835821666, 6: 10376317730742599722, 7: 442003720503347, 8: 11529390968771969115, 9: 14988212656689645132, 10: 3459180129660437124, 11: 16147979721148203861, 12: 17296668118696855021, 13: 9227134571072480414, 14: 4618353464114686070, 15: 8183717834812044671, 16: 1198465691292819143, 17: 2366045755749583272, 18: 13941741584329639728, 19: 14494474964360714113, 20: 7646225019617799193, 21: 13645358504996018922, 22: 554074333738726254, 23: 4786096007684651070, 24: 4741631033305121237, 25: 17717416268623621775, 26: 3100551030501750445, 27: 9708113044954383277, 28: 10149619148849421687, 29: 2165863751534438555, 30: 15021127369453955789, 31: 10061738721142127305, 32: 7902464346767349504}
+
     for k in keysTest.keys():
         assert keysTest[k] == keys[k]
     
