@@ -34,7 +34,7 @@ def ror(val, r_bits, max_bits): return \
 
 def genRoundKeys(key):
     roundkeys = []
-    roundkeys.append(FULLROUND + 1)
+    roundkeys.append(32)
     for i in range(1,FULLROUND+2): # (K1 ... K32)
             roundkeys.append(key >>16)
             #1. Shift
