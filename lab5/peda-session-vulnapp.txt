@@ -1,0 +1,40 @@
+break /home/student/lab5/vulnapp.c:34
+break /home/student/lab5/vulnapp.c:36
+break /home/student/lab5/vulnapp.c:38
+break /home/student/lab5/vulnapp.c:39
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
